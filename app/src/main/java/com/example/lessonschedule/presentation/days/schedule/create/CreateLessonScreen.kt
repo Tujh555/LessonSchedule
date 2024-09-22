@@ -6,18 +6,24 @@ import com.example.lessonschedule.domain.LessonType
 import com.example.lessonschedule.presentation.base.BaseScreen
 import com.example.lessonschedule.presentation.base.BaseScreenModel
 import com.example.lessonschedule.presentation.models.InputState
-import java.time.Instant
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class CreateLessonScreen : BaseScreen<CreateLessonScreen.Action, CreateLessonScreen.State>() {
     @Immutable
     data class State(
-        val title: InputState = InputState(),
-        val venue: InputState = InputState(),
-        val teacherName: InputState = InputState(),
-        val selectedLessonType: LessonType? = null,
-        val selectedDate: Instant? = null,
-        val selectedTime: Pair<Int, Int>? = null
-    )
+        val title: InputState<String> = InputState(""),
+        val venue: InputState<String> = InputState(""),
+        val teacherName: InputState<String> = InputState(""),
+        val selectedLessonType: LessonType = LessonType.LECTURE,
+        val selectedDate: InputState<Long?> = InputState(null),
+        val selectedTimeStart: InputState<Pair<Int, Int>?> = InputState(null),
+        val selectedTimeEnd: InputState<Pair<Int, Int>?> = InputState(null)
+    ) {
+        val formatter by lazy {
+            SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
+        }
+    }
 
     @Immutable
     sealed interface Action {
@@ -26,7 +32,8 @@ class CreateLessonScreen : BaseScreen<CreateLessonScreen.Action, CreateLessonScr
         data class TeacherUpdate(val text: String) : Action
         data class LessonTypeUpdate(val type: LessonType) : Action
         data class DateSelected(val date: Long) : Action
-        data class TimeSelected(val time: Pair<Int, Int>) : Action
+        data class StartTimeSelected(val time: Pair<Int, Int>) : Action
+        data class EndTimeSelected(val time: Pair<Int, Int>) : Action
     }
 
     @Composable

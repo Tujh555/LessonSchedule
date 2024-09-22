@@ -26,6 +26,7 @@ voyager-transitions = { module = "cafe.adriel.voyager:voyager-transitions", vers
 androidx-room = { module = "androidx.room:room-ktx", version.ref = "roomVersion" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomVersion" }
 lottie = { module = "com.airbnb.android:lottie-compose", version.ref = "lottie" }
+reflection = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -70,6 +70,7 @@ dependencies {
     implementation(libs.voyager.transitions)
     implementation(libs.androidx.room)
     implementation(libs.lottie)
+    implementation(libs.reflection)
     kapt(libs.androidx.room.compiler)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
