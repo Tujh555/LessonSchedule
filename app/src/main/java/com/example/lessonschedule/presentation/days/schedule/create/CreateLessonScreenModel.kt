@@ -1,5 +1,6 @@
 package com.example.lessonschedule.presentation.days.schedule.create
 
+import android.widget.Toast
 import androidx.compose.material3.SnackbarDuration
 import com.example.lessonschedule.DependencyHolder
 import com.example.lessonschedule.domain.Lesson
@@ -138,7 +139,7 @@ class CreateLessonScreenModel :
 
         val isTimeRangeError = startTime == null ||
                 endTime == null ||
-                (startTime.first + startTime.second * 60) > (endTime.first + endTime.second * 60)
+                (startTime.first * 60 + startTime.second) > (endTime.first * 60 + endTime.second)
 
         _state.update {
             it.copy(
