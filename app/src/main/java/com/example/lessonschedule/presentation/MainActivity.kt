@@ -8,6 +8,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -104,17 +106,26 @@ class MainActivity : ComponentActivity() {
             disposeScreenAfterTransitionEnd = true,
             content = { it.Content() },
             transition = {
-                val (initialOffset, targetOffset) = when (navigator.lastItem::class) {
-                    DaysScheduleScreen::class -> ({ size: Int -> -size }) to ({ size: Int -> size })
-                    else -> ({ size: Int -> size }) to ({ size: Int -> -size })
-                }
-                val animationSpec = spring(
+                val sizeSpec = spring(
                     stiffness = Spring.StiffnessMediumLow,
                     visibilityThreshold = IntOffset.VisibilityThreshold
                 )
-
-                slideInHorizontally(animationSpec, initialOffset) togetherWith
-                        slideOutHorizontally(animationSpec, targetOffset)
+                val floatSpec = spring<Float>(
+                    stiffness = Spring.StiffnessMediumLow
+                )
+                when (navigator.lastItem::class) {
+                    DaysScheduleScreen::class -> {
+                        slideInHorizontally(sizeSpec) { -it } togetherWith
+                                slideOutHorizontally(sizeSpec) { it }
+                    }
+                    SearchScreen::class -> {
+                        slideInHorizontally(sizeSpec) { it } togetherWith
+                                slideOutHorizontally(sizeSpec) { -it }
+                    }
+                    else -> {
+                        fadeIn(floatSpec) togetherWith fadeOut(floatSpec)
+                    }
+                }
             }
         )
     }

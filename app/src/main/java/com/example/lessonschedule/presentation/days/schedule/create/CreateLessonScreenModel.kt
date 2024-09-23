@@ -1,14 +1,23 @@
 package com.example.lessonschedule.presentation.days.schedule.create
 
-import androidx.compose.runtime.internal.illegalDecoyCallException
+import androidx.compose.material3.SnackbarDuration
+import com.example.lessonschedule.DependencyHolder
+import com.example.lessonschedule.domain.Lesson
 import com.example.lessonschedule.domain.LessonType
 import com.example.lessonschedule.presentation.base.BaseScreenModel
 import com.example.lessonschedule.presentation.models.InputState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
-class CreateLessonScreenModel : BaseScreenModel<CreateLessonScreen.Action, CreateLessonScreen.State>(
-    initialState = CreateLessonScreen.State()
-) {
+class CreateLessonScreenModel :
+    BaseScreenModel<CreateLessonScreen.Action, CreateLessonScreen.State>(
+        initialState = CreateLessonScreen.State()
+    ) {
+    private val repository = DependencyHolder.lessonRepository
     override fun onAction(action: CreateLessonScreen.Action) {
         when (action) {
             is CreateLessonScreen.Action.DateSelected -> onDateSelected(action.date)
@@ -18,6 +27,62 @@ class CreateLessonScreenModel : BaseScreenModel<CreateLessonScreen.Action, Creat
             is CreateLessonScreen.Action.TitleUpdate -> onTitleUpdate(action.text)
             is CreateLessonScreen.Action.VenueUpdate -> onVenueUpdate(action.text)
             is CreateLessonScreen.Action.EndTimeSelected -> onEndTimeSelected(action.time)
+            CreateLessonScreen.Action.Create -> create()
+        }
+    }
+
+    private fun create() {
+        validateState()
+        if (state.value.isStateValid.not()) {
+            return
+        }
+
+        val currentState = state.value
+        val dateMillis = currentState.selectedDate.value ?: 0L
+        val date = Instant
+            .ofEpochMilli(dateMillis)
+            .minus(5L, ChronoUnit.HOURS)
+        val startAt = currentState.selectedTimeStart.value
+            ?.let { (hour, minute) ->
+                date
+                    .plus(hour.toLong(), ChronoUnit.HOURS)
+                    .plus(minute.toLong(), ChronoUnit.MINUTES)
+            }
+            ?: date
+
+        val endAt = currentState.selectedTimeEnd.value
+            ?.let { (hour, minute) ->
+                date
+                    .plus(hour.toLong(), ChronoUnit.HOURS)
+                    .plus(minute.toLong(), ChronoUnit.MINUTES)
+            }
+            ?: date
+
+        val lesson = Lesson(
+            id = 0,
+            title = currentState.title.value,
+            venue = currentState.venue.value,
+            teacherName = currentState.teacherName.value,
+            type = currentState.selectedLessonType,
+            startAt = startAt,
+            endAt = endAt
+        )
+
+        ioScope.launch {
+            repository.createLesson(lesson)
+
+            withContext(Dispatchers.Main.immediate) {
+                val snackbarHostState = state.value.snackbarHostState
+                snackbarHostState.showSnackbar(
+                    message = "Запись создана",
+                    withDismissAction = true,
+                    duration = SnackbarDuration.Long
+                )
+            }
+        }
+
+        _state.update {
+            CreateLessonScreen.State()
         }
     }
 
@@ -65,7 +130,7 @@ class CreateLessonScreenModel : BaseScreenModel<CreateLessonScreen.Action, Creat
         }
     }
 
-    private fun validateState(): Boolean {
+    private fun validateState() {
         val currentState = state.value
 
         val startTime = currentState.selectedTimeStart.value
@@ -85,10 +150,6 @@ class CreateLessonScreenModel : BaseScreenModel<CreateLessonScreen.Action, Creat
                 selectedDate = it.selectedDate.copy(isError = it.selectedDate.value == null)
             )
         }
-
-        state.value::class.members
-
-        return
     }
 
     private fun validateTextInput(inputState: InputState<String>): InputState<String> {

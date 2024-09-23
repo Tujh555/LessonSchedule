@@ -1,5 +1,6 @@
 package com.example.lessonschedule.presentation.days.schedule.create
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import com.example.lessonschedule.domain.LessonType
@@ -18,10 +19,15 @@ class CreateLessonScreen : BaseScreen<CreateLessonScreen.Action, CreateLessonScr
         val selectedLessonType: LessonType = LessonType.LECTURE,
         val selectedDate: InputState<Long?> = InputState(null),
         val selectedTimeStart: InputState<Pair<Int, Int>?> = InputState(null),
-        val selectedTimeEnd: InputState<Pair<Int, Int>?> = InputState(null)
+        val selectedTimeEnd: InputState<Pair<Int, Int>?> = InputState(null),
+        val snackbarHostState: SnackbarHostState = SnackbarHostState()
     ) {
         val formatter by lazy {
             SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
+        }
+        val isStateValid by lazy {
+            listOf(title, venue, teacherName, selectedDate, selectedTimeStart, selectedTimeEnd)
+                .all { it.isError.not() }
         }
     }
 
@@ -34,6 +40,7 @@ class CreateLessonScreen : BaseScreen<CreateLessonScreen.Action, CreateLessonScr
         data class DateSelected(val date: Long) : Action
         data class StartTimeSelected(val time: Pair<Int, Int>) : Action
         data class EndTimeSelected(val time: Pair<Int, Int>) : Action
+        data object Create : Action
     }
 
     @Composable

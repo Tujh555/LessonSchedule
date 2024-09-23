@@ -24,6 +24,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -155,7 +157,12 @@ private fun Lessons(
         ScrollableTabRow(
             selectedTabIndex = selectedTabIndex,
             modifier = Modifier.fillMaxWidth(),
-            edgePadding = 0.dp
+            edgePadding = 0.dp,
+            indicator = { tabPositions ->
+                tabPositions.getOrNull(selectedTabIndex)?.let {
+                    TabRowDefaults.SecondaryIndicator(Modifier.tabIndicatorOffset(it))
+                }
+            }
         ) {
             lessons.fastForEachIndexed { index, (date, _) ->
                 Tab(
@@ -172,7 +179,7 @@ private fun Lessons(
             }
         }
 
-        val selectedList = lessons[selectedTabIndex].second
+        val selectedList = lessons.getOrNull(selectedTabIndex)?.second.orEmpty()
         HorizontalPager(
             state = pagerState,
             modifier = Modifier
@@ -193,7 +200,8 @@ private fun Lessons(
                     LessonItemContent(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 8.dp),
+                            .padding(bottom = 8.dp)
+                            .animateItem(),
                         item = item,
                         onClick = onLessonLick,
                         onDismiss = onDismiss

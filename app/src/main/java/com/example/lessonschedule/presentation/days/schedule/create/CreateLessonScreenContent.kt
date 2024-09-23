@@ -1,16 +1,17 @@
 package com.example.lessonschedule.presentation.days.schedule.create
 
 import android.icu.util.Calendar
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
@@ -19,12 +20,14 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -32,14 +35,13 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
@@ -47,6 +49,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import com.example.lessonschedule.R
 import com.example.lessonschedule.domain.LessonType
 import com.example.lessonschedule.presentation.getTitle
+import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,10 +75,29 @@ fun CreateLessonScreenContent(
                 }
             )
         },
+        snackbarHost = { SnackbarHost(state.snackbarHostState) },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    onAction(CreateLessonScreen.Action.Create)
+                },
+                content = {
+                    Icon(
+                        imageVector = Icons.Filled.Check,
+                        contentDescription = ""
+                    )
+                }
+            )
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
-                .padding(start = 16.dp, end = 16.dp, top = innerPadding.calculateTopPadding())
+                .padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = innerPadding.calculateTopPadding(),
+                    bottom = innerPadding.calculateBottomPadding()
+                )
                 .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -159,15 +181,11 @@ fun CreateLessonScreenContent(
             var showDatePicker by remember { mutableStateOf(false) }
             val datePickerState = rememberDatePickerState()
 
-            LaunchedEffect(datePickerState.selectedDateMillis) {
-                datePickerState.selectedDateMillis?.let {
-                    onAction(CreateLessonScreen.Action.DateSelected(it))
-                }
-            }
-
             OutlinedTextField(
-                value = state.formatter.format(state.selectedDate),
-                isError = state.selectedDate?.isError ?: false,
+                value = state.selectedDate.value
+                    ?.let { state.formatter.format(Date(it)) }
+                    .orEmpty(),
+                isError = state.selectedDate.isError,
                 onValueChange = { },
                 label = { Text("Дата занятия") },
                 readOnly = true,
@@ -185,20 +203,28 @@ fun CreateLessonScreenContent(
             if (showDatePicker) {
                 DatePickerDialog(
                     onDismissRequest = { showDatePicker = false },
-                    confirmButton = { Text("ok") }
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .shadow(elevation = 4.dp)
-                            .background(MaterialTheme.colorScheme.surface)
-                            .padding(16.dp)
-                    ) {
-                        DatePicker(
-                            state = datePickerState,
-                            showModeToggle = false
-                        )
+                    confirmButton = {
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .clickable {
+                                    datePickerState.selectedDateMillis?.let {
+                                        onAction(CreateLessonScreen.Action.DateSelected(it))
+                                    }
+                                    showDatePicker = false
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Ok")
+                        }
                     }
+                ) {
+                    DatePicker(
+                        state = datePickerState,
+                        showModeToggle = false
+                    )
                 }
             }
 
@@ -213,7 +239,9 @@ fun CreateLessonScreenContent(
             var isStartTimeDialogVisible by remember { mutableStateOf(false) }
 
             OutlinedTextField(
-                value = state.selectedTimeStart.value?.let { (hour, minute) -> "$hour:$minute" }.orEmpty(),
+                value = state.selectedTimeStart.value
+                    ?.let { (hour, minute) -> "$hour:$minute" }
+                    .orEmpty(),
                 onValueChange = { },
                 isError = state.selectedTimeStart.isError,
                 label = { Text("Время начала занятия") },
@@ -229,30 +257,32 @@ fun CreateLessonScreenContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            AlertDialog(
-                onDismissRequest = { isStartTimeDialogVisible = false },
-                dismissButton = {
-                    TextButton(onClick = { isStartTimeDialogVisible = false }) {
-                        Text("Dismiss")
-                    }
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            val startTime = timePickerState.hour to timePickerState.minute
-                            onAction(CreateLessonScreen.Action.StartTimeSelected(startTime))
-                            isStartTimeDialogVisible = false
+            if (isStartTimeDialogVisible) {
+                AlertDialog(
+                    onDismissRequest = { isStartTimeDialogVisible = false },
+                    dismissButton = {
+                        TextButton(onClick = { isStartTimeDialogVisible = false }) {
+                            Text("Dismiss")
                         }
-                    ) {
-                        Text("OK")
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                val startTime = timePickerState.hour to timePickerState.minute
+                                onAction(CreateLessonScreen.Action.StartTimeSelected(startTime))
+                                isStartTimeDialogVisible = false
+                            }
+                        ) {
+                            Text("OK")
+                        }
+                    },
+                    text = {
+                        TimePicker(
+                            state = timePickerState,
+                        )
                     }
-                },
-                text = {
-                    TimePicker(
-                        state = timePickerState,
-                    )
-                }
-            )
+                )
+            }
 
             val endTimePickerState = rememberTimePickerState(
                 initialHour = currentTime.get(Calendar.HOUR_OF_DAY),
@@ -263,7 +293,9 @@ fun CreateLessonScreenContent(
             var isEndTimeDialogVisible by remember { mutableStateOf(false) }
 
             OutlinedTextField(
-                value = state.selectedTimeEnd.value?.let { (hour, minute) -> "$hour:$minute" }.orEmpty(),
+                value = state.selectedTimeEnd.value
+                    ?.let { (hour, minute) -> "$hour:$minute" }
+                    .orEmpty(),
                 onValueChange = { },
                 isError = state.selectedTimeEnd.isError,
                 label = { Text("Время конца занятия") },
@@ -279,30 +311,30 @@ fun CreateLessonScreenContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            AlertDialog(
-                onDismissRequest = { isEndTimeDialogVisible = false },
-                dismissButton = {
-                    TextButton(onClick = { isEndTimeDialogVisible = false }) {
-                        Text("Dismiss")
-                    }
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            val endTime = endTimePickerState.hour to endTimePickerState.minute
-                            onAction(CreateLessonScreen.Action.EndTimeSelected(endTime))
-                            isEndTimeDialogVisible = false
+            if (isEndTimeDialogVisible) {
+                AlertDialog(
+                    onDismissRequest = { isEndTimeDialogVisible = false },
+                    dismissButton = {
+                        TextButton(onClick = { isEndTimeDialogVisible = false }) {
+                            Text("Dismiss")
                         }
-                    ) {
-                        Text("OK")
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                val endTime = endTimePickerState.hour to endTimePickerState.minute
+                                onAction(CreateLessonScreen.Action.EndTimeSelected(endTime))
+                                isEndTimeDialogVisible = false
+                            }
+                        ) {
+                            Text("OK")
+                        }
+                    },
+                    text = {
+                        TimePicker(state = endTimePickerState)
                     }
-                },
-                text = {
-                    TimePicker(
-                        state = endTimePickerState,
-                    )
-                }
-            )
+                )
+            }
         }
     }
 }

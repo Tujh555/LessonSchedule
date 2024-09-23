@@ -1,7 +1,9 @@
 package com.example.lessonschedule.presentation.models
 
 import androidx.compose.runtime.Immutable
+import com.example.lessonschedule.domain.Lesson
 import com.example.lessonschedule.domain.LessonType
+import java.time.Instant
 
 @Immutable
 data class LessonItem(
@@ -12,4 +14,14 @@ data class LessonItem(
     val type: LessonType,
     val venue: String,
     val teacherName: String
+)
+
+inline fun Lesson.toUi(mapTime: (Instant) -> String) = LessonItem(
+    id = id,
+    title = title,
+    type = type,
+    venue = venue,
+    teacherName = teacherName,
+    startAt = mapTime(startAt),
+    endAt = mapTime(endAt)
 )
