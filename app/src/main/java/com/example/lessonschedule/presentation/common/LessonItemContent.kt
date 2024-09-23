@@ -43,7 +43,7 @@ private val itemShape = RoundedCornerShape(8.dp)
 fun LessonItemContent(
     modifier: Modifier = Modifier,
     item: LessonItem,
-    onDismiss: (LessonItem) -> Unit = {},
+    onDismiss: ((LessonItem) -> Unit)? = {},
     onClick: (LessonItem) -> Unit = {}
 ) {
     val leadingLetter = when (item.type) {
@@ -55,7 +55,7 @@ fun LessonItemContent(
         confirmValueChange = { state ->
             when (state) {
                 SwipeToDismissBoxValue.EndToStart -> {
-                    onDismiss(item)
+                    onDismiss?.invoke(item)
                     true
                 }
                 SwipeToDismissBoxValue.StartToEnd,
@@ -68,6 +68,7 @@ fun LessonItemContent(
         modifier = modifier,
         state = dismissState,
         enableDismissFromStartToEnd = false,
+        gesturesEnabled = onDismiss != null,
         backgroundContent = {
             val color by animateColorAsState(
                 targetValue = when (dismissState.dismissDirection) {
