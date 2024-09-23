@@ -9,6 +9,7 @@ import com.example.lessonschedule.domain.LessonRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 class LessonRepositoryImpl(private val lessonDao: LessonDao): LessonRepository {
     override val lessons: Flow<List<Lesson>> = lessonDao
@@ -26,6 +27,6 @@ class LessonRepositoryImpl(private val lessonDao: LessonDao): LessonRepository {
 
     override suspend fun getLessonsBetween(startAt: Instant, endAt: Instant): List<Lesson> =
         lessonDao
-            .getLessonsBetween(startAt, endAt)
+            .getLessonsBetween(startAt, endAt.plus(1, ChronoUnit.DAYS))
             .map(LessonEntity::toDomain)
 }

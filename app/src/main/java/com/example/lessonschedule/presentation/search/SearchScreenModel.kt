@@ -1,6 +1,5 @@
 package com.example.lessonschedule.presentation.search
 
-import android.util.Log
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.example.lessonschedule.DependencyHolder
 import com.example.lessonschedule.presentation.base.BaseScreenModel
@@ -49,9 +48,10 @@ class SearchScreenModel : BaseScreenModel<SearchScreen.Action, SearchScreen.Stat
             ?: startInstant
 
         screenModelScope.launch(Dispatchers.IO) {
-            val lessons = repository.getLessonsBetween(startInstant, endInstant)
-
-            Log.e("--tag", "Lessons = $lessons")
+            val lessons = repository.getLessonsBetween(
+                startAt = startInstant,
+                endAt = endInstant
+            )
             _state.update {
                 it.copy(
                     searchItems = lessons
